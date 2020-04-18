@@ -16,5 +16,6 @@ data = {
     }
 }
 
-res = requests.post(f"{url}/task", json=json.dumps(data))
+res = requests.post(f"{url}/task", json=data)
 print(res.status_code, res.content)
+

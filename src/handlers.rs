@@ -13,12 +13,18 @@ async fn index(info: web::Path<(u32, String)>) -> impl Responder {
         tasktype: "abc".to_string(),
     };
     let json = serde_json::to_string_pretty(&data).unwrap();
-    // eprintln!("{}", json);
     format!("Hello {}! id:{}", info.1, info.0)
 }
+
 #[post("/task")]
 async fn tasks(db: web::Data<Pool>, data: web::Json<Model>) -> impl Responder {
-    eprintln!("{}", "hehehe");
-    eprintln!("{:#?}", data);
-    format!("hello")
+    let conn = db.clone().get().unwrap();
+
+    let res = add_task(conn, data.into_inner());
+    match res {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => HttpResponse::Ok().json(Model::Error {
+            msg: format!("{}", e),
+        }),
+    }
 }
