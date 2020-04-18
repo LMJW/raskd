@@ -1,15 +1,10 @@
 CREATE TABLE tasks (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    tasktype TEXT NOT NULL
-);
-
-CREATE TABLE timeslots(
-    id INTEGER,
+    tasktype TEXT NOT NULL,
     start TEXT NOT NULL,
-    end TEXT,
-    duration INTEGER,
-    CONSTRAINT fk_id
-        FOREIGN KEY (id)
-        REFERENCES tasks(id)
+    stop TEXT,
+    --- after pause and restart, we will store another entry of the same task
+    --  but with increment of parts
+    parts INTEGER NOT NULL
 );

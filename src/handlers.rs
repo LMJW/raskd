@@ -11,6 +11,8 @@ async fn index(info: web::Path<(u32, String)>) -> impl Responder {
         id: 1,
         name: "haha".to_string(),
         tasktype: "abc".to_string(),
+        duration: "".to_string(),
+        start_at: "".to_string(),
     };
     let json = serde_json::to_string_pretty(&data).unwrap();
     format!("Hello {}! id:{}", info.1, info.0)

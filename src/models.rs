@@ -6,6 +6,10 @@ pub enum Model {
         id: i64,
         name: String,
         tasktype: String,
+        #[serde(skip_serializing)]
+        duration: String,
+        #[serde(skip_serializing)]
+        start_at: String,
     },
     Error {
         msg: String,
