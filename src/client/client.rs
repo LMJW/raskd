@@ -1,5 +1,6 @@
 use clap::{App, Arg};
-use raskd::models::Incoming;
+use raskd::models::{Incoming, Outgoing};
+mod fmtjs;
 
 fn main() {
     let cmds = App::new("RASK command line tool")
@@ -101,14 +102,24 @@ fn main() {
                 name: name,
                 tasktype,
             };
-            let path = format!("{}{}", url, "/task");
+            let path = format!("{}/{}", url, "task");
             match client.post(&path).json(&json).send() {
                 Ok(res) => {
-                    println!("{:#?}", res.bytes().unwrap());
+                    fmtjs::fmt_one(res.json::<Outgoing>().unwrap());
                 }
-                Err(e) => eprintln!("{}", format!("{}", e)),
+                Err(e) => unimplemented!(),
+            }
+        }
+        ("ls", Some(sub)) => {
+            let path = format!("{}/{}", url, "task");
+            match client.get(&path).send() {
+                Ok(res) => {
+                    // eprintln!("{:#?}", res.json::<Vec<Outgoing>>().unwrap());
+                    fmtjs::fmt_many(res.json::<Vec<Outgoing>>().unwrap());
+                }
+                Err(e) => unimplemented!(),
             }
         }
         _ => unimplemented!(),
-    }
+    };
 }
