@@ -29,8 +29,8 @@ fn query_task(conn: Connection, id: i64) -> QueryResult {
                 duration: format!(
                     "{:02}:{:02}:{:02}",
                     &duration.num_hours(),
-                    &duration.num_minutes(),
-                    &duration.num_seconds()
+                    &duration.num_minutes() % 60,
+                    &duration.num_seconds() % 60
                 ),
             })
         },
@@ -53,8 +53,8 @@ pub fn query_tasks(conn: Connection) -> QueryResults {
             duration: format!(
                 "{:02}:{:02}:{:02}",
                 &duration.num_hours(),
-                &duration.num_minutes(),
-                &duration.num_seconds()
+                &duration.num_minutes() % 60,
+                &duration.num_seconds() % 60
             ),
         })
     })
