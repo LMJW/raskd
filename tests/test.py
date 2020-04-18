@@ -9,14 +9,14 @@ print(res)
 
 # test post task
 data = {
-    "Task": {
-        "id": 1,
+    "create": {
         "name": "haha",
         "tasktype": "abc",
-        "duration": "",
-        "start_at": "",
     }
 }
-
 res = requests.post(f"{url}/task", json=data)
+print(res.status_code, res.content)
+
+# test the get task
+res = requests.get(f"{url}/task")
 print(res.status_code, res.content)
