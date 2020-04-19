@@ -112,24 +112,34 @@ pub fn update_task(conn: Connection, task: Incoming) -> QueryResult {
     match task {
         Incoming::Update { id, name, .. } => match (id, name) {
             (Some(id), _) => {
-                conn.execute(
-                    "UPDATE tasks SET stop=?1 WHERE id=?2",
-                    params![curt.to_rfc2822(), id],
-                )?;
+                let stop =
+                    conn.query_row("SELECT stop FROM tasks WHERE id=?1", params![id], |row| {
+                        let stop: Option<String> = row.get(0)?;
+                        Ok(stop)
+                    })?;
+                if let None = stop {
+                    conn.execute(
+                        "UPDATE tasks SET stop=?1 WHERE id=?2",
+                        params![curt.to_rfc2822(), id],
+                    )?;
+                };
                 query_completed_task(conn, id)
             }
             (None, Some(name)) => {
                 //TODO : change this sql
-                let sql = format!("SELECT id FROM tasks WHERE name LIKE '%{}%'", name);
+                let sql = format!("SELECT id, stop FROM tasks WHERE name LIKE '%{}%'", name);
 
-                let id = conn.query_row(&sql, NO_PARAMS, |row| {
+                let (id, stop) = conn.query_row(&sql, NO_PARAMS, |row| {
                     let id: i64 = row.get(0)?;
-                    Ok(id)
+                    let stop: Option<String> = row.get(1)?;
+                    Ok((id, stop))
                 })?;
-                conn.execute(
-                    "UPDATE tasks SET stop=?1 WHERE id=?2",
-                    params![curt.to_rfc2822(), id],
-                )?;
+                if let None = stop {
+                    conn.execute(
+                        "UPDATE tasks SET stop=?1 WHERE id=?2",
+                        params![curt.to_rfc2822(), id],
+                    )?;
+                };
                 query_completed_task(conn, id)
             }
             (None, None) => Ok(Outgoing::Error {
