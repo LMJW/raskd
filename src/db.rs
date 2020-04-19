@@ -119,14 +119,13 @@ pub fn update_task(conn: Connection, task: Incoming) -> QueryResult {
                 query_completed_task(conn, id)
             }
             (None, Some(name)) => {
-                let id = conn.query_row(
-                    "SELECT id FROM tasks WHERE name LIKE '%?1%'",
-                    params![&name],
-                    |row| {
-                        let id: i64 = row.get(0)?;
-                        Ok(id)
-                    },
-                )?;
+                //TODO : change this sql
+                let sql = format!("SELECT id FROM tasks WHERE name LIKE '%{}%'", name);
+
+                let id = conn.query_row(&sql, NO_PARAMS, |row| {
+                    let id: i64 = row.get(0)?;
+                    Ok(id)
+                })?;
                 conn.execute(
                     "UPDATE tasks SET stop=?1 WHERE id=?2",
                     params![curt.to_rfc2822(), id],
