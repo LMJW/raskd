@@ -28,7 +28,7 @@ windows. Linux and MacOs should be fine. (if not, **PR** are very welcome)
    if the binary is at the current directory. This should start the `raskd`
    server in the background.
 6. whenever you need to create a task, you can use `rask` cli to do this. See
-   the `wiki` page to see more use cases.
+   the [wiki](https://github.com/LMJW/raskd/wiki) page to see more use cases.
 
 ---
 
