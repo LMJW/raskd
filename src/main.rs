@@ -1,7 +1,6 @@
 use actix_web::{middleware, App, HttpServer};
 use r2d2;
 use r2d2_sqlite;
-use std::fs;
 mod db;
 mod handlers;
 
@@ -9,9 +8,8 @@ mod handlers;
 async fn main() -> std::io::Result<()> {
     // std::env::set_var("RUST_LOG", "actix_web=info");
     // env_logger::init();
-    let sql = fs::read_to_string("./src/sql/0001.sql")?;
-    let conn =
-        r2d2_sqlite::SqliteConnectionManager::memory().with_init(move |c| c.execute_batch(&sql));
+    // let sql = fs::read_to_string("./src/sql/0001.sql")?;
+    let conn = r2d2_sqlite::SqliteConnectionManager::file("test.db");
     let pool = r2d2::Pool::new(conn).unwrap();
     HttpServer::new(move || {
         App::new()
@@ -19,6 +17,7 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             .service(handlers::post_tasks)
             .service(handlers::get_tasks)
+            .service(handlers::patch_task)
     })
     .bind("127.0.0.1:22022")?
     .run()

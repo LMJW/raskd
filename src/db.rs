@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use r2d2;
 use r2d2_sqlite;
-use raskd::models::{Incoming, Outgoing};
+use raskd::models::{Incoming, Outgoing, QueryParams};
 use rusqlite::{params, NO_PARAMS};
 
 /// define type alias to make less verbose
@@ -10,12 +10,14 @@ pub type Connection = r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManage
 type QueryResults = Result<Vec<Outgoing>, rusqlite::Error>;
 type QueryResult = Result<Outgoing, rusqlite::Error>;
 
-fn query_task(conn: Connection, id: i64) -> QueryResult {
+fn query_completed_task(conn: Connection, id: i64) -> QueryResult {
+    // eprintln!("query_completed_task, {}", id);
     conn.query_row(
         "SELECT id, name, tasktype, start, stop FROM tasks WHERE id=?1",
         params![id],
         |row| {
-            let (start, stop): (String, String) = (row.get(4)?, row.get(5)?);
+            let (start, stop): (String, String) = (row.get(3)?, row.get(4)?);
+            // eprintln!("{}--{}", start, stop);
             let (dt_start, dt_stop) = (
                 DateTime::parse_from_rfc2822(&start).unwrap(),
                 DateTime::parse_from_rfc2822(&stop).unwrap(),
@@ -26,6 +28,7 @@ fn query_task(conn: Connection, id: i64) -> QueryResult {
                 name: row.get(1)?,
                 tasktype: row.get(2)?,
                 start_at: start,
+                stop_at: stop,
                 duration: format!(
                     "{:02}:{:02}:{:02}",
                     &duration.num_hours(),
@@ -37,19 +40,34 @@ fn query_task(conn: Connection, id: i64) -> QueryResult {
     )
 }
 
-pub fn query_tasks(conn: Connection) -> QueryResults {
-    let mut stmt = conn
-        .prepare("SELECT id, name, tasktype, start FROM tasks")
-        .unwrap();
+pub fn query_tasks(conn: Connection, param: QueryParams) -> QueryResults {
+    let QueryParams { all, completed, .. } = param;
+    let sql = match (all, completed) {
+        (Some(_), _) => "SELECT id, name, tasktype, start, stop FROM tasks",
+        (None, Some(_)) => {
+            "SELECT id, name, tasktype, start, stop FROM tasks WHERE stop IS NOT NULL"
+        }
+        (None, None) => "SELECT id, name, tasktype, start, stop FROM tasks WHERE stop IS NULL",
+    };
+
+    let mut stmt = conn.prepare(sql).unwrap();
     stmt.query_map(NO_PARAMS, |row| {
-        let start: String = row.get(3)?;
+        let (start, stop): (String, Option<String>) = (row.get(3)?, row.get(4)?);
         let dt = DateTime::parse_from_rfc2822(&start).unwrap();
-        let duration = Local::now().time() - dt.time();
+        let dt_stop = match stop.clone() {
+            Some(t) => DateTime::parse_from_rfc2822(&t).unwrap().time(),
+            None => Local::now().time(),
+        };
+        let duration = dt_stop - dt.time();
         Ok(Outgoing::Success {
             id: row.get(0)?,
             name: row.get(1)?,
             tasktype: row.get(2)?,
             start_at: start,
+            stop_at: match stop {
+                Some(t) => t,
+                None => "".to_string(),
+            },
             duration: format!(
                 "{:02}:{:02}:{:02}",
                 &duration.num_hours(),
@@ -80,6 +98,7 @@ pub fn add_task(conn: Connection, task: Incoming) -> QueryResult {
                 tasktype,
                 duration: "00:00:00".to_string(),
                 start_at: ts,
+                stop_at: "".to_string(),
             })
         }
         _ => Ok(Outgoing::Error {
@@ -97,7 +116,7 @@ pub fn update_task(conn: Connection, task: Incoming) -> QueryResult {
                     "UPDATE tasks SET stop=?1 WHERE id=?2",
                     params![curt.to_rfc2822(), id],
                 )?;
-                query_task(conn, id)
+                query_completed_task(conn, id)
             }
             (None, Some(name)) => {
                 let id = conn.query_row(
@@ -112,7 +131,7 @@ pub fn update_task(conn: Connection, task: Incoming) -> QueryResult {
                     "UPDATE tasks SET stop=?1 WHERE id=?2",
                     params![curt.to_rfc2822(), id],
                 )?;
-                query_task(conn, id)
+                query_completed_task(conn, id)
             }
             (None, None) => Ok(Outgoing::Error {
                 msg: "invalid input".to_string(),

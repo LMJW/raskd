@@ -1,5 +1,5 @@
 use clap::{App, Arg};
-use raskd::models::{Incoming, Outgoing};
+use raskd::models::{Incoming, Outgoing, Status};
 mod fmtjs;
 
 fn main() {
@@ -20,6 +20,11 @@ fn main() {
             App::new("ls")
                 .about("list the current running tasks")
                 .arg(Arg::with_name("all").short("a").help("list all"))
+                .arg(
+                    Arg::with_name("completed")
+                        .short("c")
+                        .help("list all completed tasks"),
+                )
                 .arg(Arg::with_name("task").short("t").help("list all tasks"))
                 .arg(Arg::with_name("timer").short("r").help("list all timers"))
                 .arg(Arg::with_name("todo").short("d").help("list all todos")),
@@ -42,14 +47,20 @@ fn main() {
         .subcommand(
             App::new("pause")
                 .about("pause a current running task or timer. [UNIMPLEMENTED]")
-                .arg(Arg::with_name("task_id").help("the task id (integer) to stop"))
-                .arg(Arg::with_name("task_name").help("the name (string) of the task")),
+                .arg(
+                    Arg::with_name("task_id_or_name")
+                        .help("the task id (integer) or the name (string) to stop")
+                        .required(true),
+                ),
         )
         .subcommand(
             App::new("stop")
                 .about("stop a current running task or timer")
-                .arg(Arg::with_name("task_id").help("the task id (integer) to stop"))
-                .arg(Arg::with_name("task_name").help("the name (string) of the task")),
+                .arg(
+                    Arg::with_name("task_id_or_name")
+                        .help("the task id (integer) or the name (string) to stop")
+                        .required(true),
+                ),
         )
         .subcommand(
             App::new("timer")
@@ -107,17 +118,50 @@ fn main() {
                 Ok(res) => {
                     fmtjs::fmt_one(res.json::<Outgoing>().unwrap());
                 }
-                Err(e) => unimplemented!(),
+                Err(e) => eprintln!("{:#?}", e),
             }
         }
         ("ls", Some(sub)) => {
-            let path = format!("{}/{}", url, "task");
+            let path = match sub.args.is_empty() {
+                false => {
+                    let mut vals = Vec::<String>::new();
+                    for key in sub.args.keys() {
+                        vals.push(format!("{}=true", key));
+                    }
+                    let params = vals.join("&");
+                    format!("{}/{}?{}", url, "task", params)
+                }
+                true => format!("{}/{}", url, "task"),
+            };
+
             match client.get(&path).send() {
                 Ok(res) => {
-                    // eprintln!("{:#?}", res.json::<Vec<Outgoing>>().unwrap());
                     fmtjs::fmt_many(res.json::<Vec<Outgoing>>().unwrap());
                 }
-                Err(e) => unimplemented!(),
+                Err(e) => eprintln!("{:#?}", e),
+            }
+        }
+        ("stop", Some(sub)) => {
+            let path = format!("{}/{}", url, "task");
+            let val = sub.value_of("task_id_or_name").unwrap().to_string();
+            let id = val.parse::<i64>();
+            let json = match id {
+                Ok(id) => Incoming::Update {
+                    id: Some(id),
+                    name: None,
+                    action: Status::Stop,
+                },
+                Err(_) => Incoming::Update {
+                    id: None,
+                    name: Some(val),
+                    action: Status::Stop,
+                },
+            };
+            match client.patch(&path).json(&json).send() {
+                Ok(res) => {
+                    fmtjs::fmt_one(res.json::<Outgoing>().unwrap());
+                }
+                Err(e) => eprintln!("{:#?}", e),
             }
         }
         _ => unimplemented!(),

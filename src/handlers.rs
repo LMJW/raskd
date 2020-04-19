@@ -1,6 +1,6 @@
 use crate::db::{add_task, query_tasks, update_task, Pool};
 use actix_web::{get, patch, post, web, HttpResponse, Responder};
-use raskd::models::{Incoming, Outgoing};
+use raskd::models::{Incoming, Outgoing, QueryParams};
 
 #[post("/task")]
 async fn post_tasks(db: web::Data<Pool>, data: web::Json<Incoming>) -> impl Responder {
@@ -16,10 +16,10 @@ async fn post_tasks(db: web::Data<Pool>, data: web::Json<Incoming>) -> impl Resp
 }
 
 #[get("/task")]
-async fn get_tasks(db: web::Data<Pool>) -> impl Responder {
+async fn get_tasks(db: web::Data<Pool>, param: web::Query<QueryParams>) -> impl Responder {
     let conn = db.clone().get().unwrap();
 
-    match query_tasks(conn) {
+    match query_tasks(conn, param.into_inner()) {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => HttpResponse::Ok().json(Outgoing::Error {
             msg: format!("{}", e),

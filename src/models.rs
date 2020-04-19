@@ -11,6 +11,15 @@ pub enum Status {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct QueryParams {
+    pub all: Option<bool>,
+    pub completed: Option<bool>,
+    pub task: Option<bool>,
+    pub timer: Option<bool>,
+    pub todo: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum Incoming {
     Create {
@@ -33,6 +42,7 @@ pub enum Outgoing {
         tasktype: String,
         duration: String,
         start_at: String,
+        stop_at: String,
     },
     Error {
         msg: String,
