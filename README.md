@@ -17,9 +17,10 @@ windows. Linux and MacOs should be fine. (if not, **PR** are very welcome)
 1. clone the repo 
 2. go to the directory, run `cargo build --release`. This will compile the
    release version of the binary.
-3. copy the binary to your path. There are two binaries for this package, the
-   `raskd` and `rask`. `raskd` is the server that listen on the request whereas
-   the `rask` is the command line tool to interact with the `raskd` server.
+3. copy the binary to your path. You can find the binary at `target/release/`.
+   There are two binaries for this package, the `raskd` and `rask`. `raskd` is
+   the server that listen on the request whereas the `rask` is the command line
+   tool to interact with the `raskd` server.
 4. before you can start `raskd`, you need to run `raskd init` to initialize the
    sqlite3 database. The default database name is `raskd.db` and it will be
    stored at the directory where you put your `raskd` binary.
