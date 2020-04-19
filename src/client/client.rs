@@ -31,7 +31,7 @@ fn main() {
         )
         .subcommand(
             App::new("startin")
-                .about("start a task in X minues")
+                .about("[UNIMPLEMENTED]: start a task in X minues")
                 .arg(
                     Arg::with_name("TIME")
                         .help("set the time before start. e.g. (5m, 10s, 1h)")
@@ -46,7 +46,7 @@ fn main() {
         )
         .subcommand(
             App::new("pause")
-                .about("pause a current running task or timer. [UNIMPLEMENTED]")
+                .about("[UNIMPLEMENTED]: pause a current running task or timer")
                 .arg(
                     Arg::with_name("task_id_or_name")
                         .help("the task id (integer) or the name (string) to stop")
@@ -64,7 +64,7 @@ fn main() {
         )
         .subcommand(
             App::new("timer")
-                .about("start a background timer")
+                .about("[UNIMPLEMENTED]: start a background timer")
                 .subcommand(
                     App::new("start")
                         .about("start a background active timer")
@@ -76,7 +76,7 @@ fn main() {
                 )
                 .subcommand(
                     App::new("pause")
-                        .about("pause a background active timer")
+                        .about("[UNIMPLEMENTED]: pause a background active timer")
                         .arg(
                             Arg::with_name("timer name or id")
                                 .help("the name(string) or id(int) of the timer")
@@ -94,11 +94,13 @@ fn main() {
                 ),
         )
         .subcommand(
-            App::new("todo").about("add a todo in the list").arg(
-                Arg::with_name("todo name")
-                    .help("the name of todo task")
-                    .required(true),
-            ),
+            App::new("todo")
+                .about("[UNIMPLEMENTED]: add a todo in the list")
+                .arg(
+                    Arg::with_name("todo name")
+                        .help("the name of todo task")
+                        .required(true),
+                ),
         )
         .get_matches();
 
@@ -164,6 +166,9 @@ fn main() {
                 Err(e) => eprintln!("{:#?}", e),
             }
         }
-        _ => unimplemented!(),
+        _ => {
+            eprintln!("command unimplemented");
+            eprintln!("use `-h` to check other options");
+        }
     };
 }
